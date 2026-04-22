@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: otp-postgres
+    environment:
+      POSTGRES_DB: otp
+      POSTGRES_USER: otp
+      POSTGRES_PASSWORD: otp
+    ports:
+      - "5432:5432"
+    volumes:
+      - otp-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U otp -d otp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: otp-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  app:
+    build: .
+    container_name: otp-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/otp
+      DB_USERNAME: otp
+      DB_PASSWORD: otp
+      JWT_SECRET: ${JWT_SECRET:-change-me-please-use-a-very-long-secret-key-at-least-32-bytes}
+      JWT_TTL_MINUTES: ${JWT_TTL_MINUTES:-60}
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_AUTH: "false"
+      SMTP_STARTTLS: "false"
+      EMAIL_FROM: otp@example.com
+      SMPP_HOST: ${SMPP_HOST:-smppsim}
+      SMPP_PORT: ${SMPP_PORT:-2775}
+      SMPP_SYSTEM_ID: ${SMPP_SYSTEM_ID:-smppclient1}
+      SMPP_PASSWORD: ${SMPP_PASSWORD:-password}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-CHANGE_ME}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-CHANGE_ME}
+      OTP_FILE_PATH: /app/otp-codes.log
+    ports:
+      - "8080:8080"
+    volumes:
+      - otp-codes-log:/app
+
+volumes:
+  otp-pg-data:
+  otp-codes-log:

@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: otp-codes
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/otp}
+    username: ${DB_USERNAME:otp}
+    password: ${DB_PASSWORD:otp}
+    driver-class-name: org.postgresql.Driver
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  main:
+    allow-bean-definition-overriding: true
+
+server:
+  port: 8080
+
+otp:
+  expiration:
+    scan-interval-ms: 60000
+  file:
+    path: ${OTP_FILE_PATH:./otp-codes.log}
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:change-me-please-use-a-very-long-secret-key-at-least-32-bytes}
+    ttl-minutes: ${JWT_TTL_MINUTES:60}
+
+logging:
+  level:
+    root: INFO
+    ru.example.otpcodes: DEBUG
+    org.springframework.jdbc.core: INFO

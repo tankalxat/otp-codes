@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-users" author="otp">
+        <createTable tableName="users">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="login" type="VARCHAR(64)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password_hash" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <sql>
+            CREATE UNIQUE INDEX uniq_admin_role ON users(role) WHERE role = 'ADMIN';
+        </sql>
+    </changeSet>
+
+    <changeSet id="002-otp-config" author="otp">
+        <createTable tableName="otp_config">
+            <column name="id" type="INT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code_length" type="INT" defaultValueNumeric="6">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ttl_seconds" type="INT" defaultValueNumeric="300">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <sql>
+            ALTER TABLE otp_config ADD CONSTRAINT otp_config_single_row CHECK (id = 1);
+            ALTER TABLE otp_config ADD CONSTRAINT otp_config_code_length_range CHECK (code_length BETWEEN 4 AND 10);
+            ALTER TABLE otp_config ADD CONSTRAINT otp_config_ttl_positive CHECK (ttl_seconds > 0);
+        </sql>
+    </changeSet>
+
+    <changeSet id="003-otp-codes" author="otp">
+        <createTable tableName="otp_codes">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_otp_codes_user" references="users(id)" deleteCascade="true"/>
+            </column>
+            <column name="operation_id" type="VARCHAR(128)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="code" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="channel" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="used_at" type="TIMESTAMP WITH TIME ZONE"/>
+        </createTable>
+        <createIndex tableName="otp_codes" indexName="idx_otp_codes_user">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="otp_codes" indexName="idx_otp_codes_status_expires">
+            <column name="status"/>
+            <column name="expires_at"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
