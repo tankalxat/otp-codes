@@ -33,22 +33,24 @@ docker compose up --build -d
 ```
 
 - `postgres` - порт 5432
-- `mailpit` - SMTP http://localhost:8025
+- `mailpit` - SMTP-эмулятор, UI http://localhost:8025
+- `smppsim` - SMPP-эмулятор ([MavoCz/smscsim](https://github.com/MavoCz/smscsim)), порт 2775
 - `app` - порт 8080
 
 Файл с OTP - внутри контейнера по пути `/app/otp-codes.log` (volume `otp-codes-log`).
 
 ### Параметры
 
-Для Telegram:
+Для Telegram создать `.env` в корне:
 
 ```
-TELEGRAM_BOT_TOKEN=12345:abc
-TELEGRAM_CHAT_ID=-1001234567890
+TELEGRAM_BOT_TOKEN=123454321:токен
+TELEGRAM_CHAT_ID=12345
+
 JWT_SECRET=secret
 ```
 
-SMPPsim запускается отдельно. По умолчанию `smppsim:2775`, и если сервер недоступен, то вызов SMS вернет 502.
+SMPP эмулятор поднимется автоматически в докере. Если контейнер `smppsim` погашен, то вызов SMS канала вернет 502.
 
 ## API
 
@@ -194,7 +196,14 @@ curl -X PUT localhost:8080/admin/otp-config \
 
 ## Тестирование
 
-- **Email**: Mailpit в http://localhost:8025
-- **File**: `/app/otp-codes.log` в контейнере (или `./otp-codes.log` локально)
-- **SMS**: хост через `SMPP_HOST`
-- **Telegram**: бот через @BotFather, креды через `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID`
+- **Email**: Mailpit UI http://localhost:8025
+- **File**: `docker compose exec app cat /app/otp-codes.log`
+- **SMS**:
+    - `docker compose logs app | grep "SMS with OTP"` - подтверждение отправки
+    - `docker compose logs smppsim`
+- **Telegram**: с реальной отправкой. Создать бота, написать ему, получить токен и chat_id через `getUpdates`, положить
+  в `.env`:
+  ```
+  TELEGRAM_BOT_TOKEN=123454321:токен
+  TELEGRAM_CHAT_ID=12345
+  ```

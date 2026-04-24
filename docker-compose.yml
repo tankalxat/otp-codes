@@ -23,6 +23,15 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  smppsim:
+    build: ./smppsim
+    container_name: otp-smppsim
+    ports:
+      - "2775:2775"
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
   app:
     build: .
     container_name: otp-app
@@ -30,6 +39,8 @@ services:
       postgres:
         condition: service_healthy
       mailpit:
+        condition: service_started
+      smppsim:
         condition: service_started
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/otp

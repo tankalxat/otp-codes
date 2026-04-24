@@ -6,3 +6,4 @@ target/
 .DS_Store
 README.md
 otp-codes.log
+smppsim/

@@ -83,7 +83,15 @@ public class SmsSender implements NotificationSender {
             log.error("Failed to send SMS to {}: {}", destination, e.getMessage(), e);
             throw new RuntimeException("Failed to send SMS", e);
         } finally {
-            session.unbindAndClose();
+            closeQuietly(session);
+        }
+    }
+
+    private static void closeQuietly(SMPPSession session) {
+        try {
+            session.close();
+        } catch (Exception e) {
+            log.warn("SMPP session close failed silently: {}", e.getMessage());
         }
     }
 
